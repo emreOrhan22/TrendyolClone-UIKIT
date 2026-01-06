@@ -19,6 +19,7 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
     private let descriptionLabel = UILabel()
     private let categoryLabel = UILabel()
     private let favoriteButton = UIButton(type: .system)
+    private let addToCartButton = UIButton(type: .system)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -85,6 +86,16 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         contentView.addSubview(descriptionLabel)
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        // Add to Cart Button
+        addToCartButton.setTitle("Sepete Ekle", for: .normal)
+        addToCartButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
+        addToCartButton.setTitleColor(.white, for: .normal)
+        addToCartButton.backgroundColor = .systemOrange
+        addToCartButton.layer.cornerRadius = 12
+        addToCartButton.addTarget(self, action: #selector(addToCartButtonTapped), for: .touchUpInside)
+        contentView.addSubview(addToCartButton)
+        addToCartButton.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
             // ScrollView
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -124,12 +135,26 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
             descriptionLabel.topAnchor.constraint(equalTo: categoryLabel.bottomAnchor, constant: 16),
             descriptionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             descriptionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            descriptionLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
+            
+            // Add to Cart Button
+            addToCartButton.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 24),
+            addToCartButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            addToCartButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            addToCartButton.heightAnchor.constraint(equalToConstant: 50),
+            addToCartButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
         ])
     }
     
     @objc private func favoriteButtonTapped() {
         presenter?.toggleFavorite()
+    }
+    
+    @objc private func addToCartButtonTapped() {
+        presenter?.addToCart()
+        // Başarı mesajı göster
+        let alert = UIAlertController(title: "Başarılı", message: "Ürün sepete eklendi!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        present(alert, animated: true)
     }
     
     // MARK: - ProductDetailViewProtocol

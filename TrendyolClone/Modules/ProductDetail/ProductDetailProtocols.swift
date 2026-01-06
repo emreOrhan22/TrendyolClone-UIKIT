@@ -20,6 +20,7 @@ protocol ProductDetailPresenterProtocol: AnyObject {
     
     func viewDidLoad()
     func toggleFavorite()
+    func addToCart()
 }
 
 // MARK: - Interactor Protocol
@@ -28,6 +29,7 @@ protocol ProductDetailInteractorProtocol: AnyObject {
     var presenter: ProductDetailInteractorOutputProtocol? { get set }
     func checkFavoriteStatus(productId: Int)
     func toggleFavorite(productId: Int)
+    func addToCart(productId: Int)
 }
 
 // MARK: - Interactor Output Protocol
@@ -35,6 +37,7 @@ protocol ProductDetailInteractorProtocol: AnyObject {
 protocol ProductDetailInteractorOutputProtocol: AnyObject {
     func didCheckFavoriteStatus(isFavorite: Bool)
     func didToggleFavorite(isFavorite: Bool)
+    func didAddToCart()
 }
 
 protocol ProductDetailRouterProtocol: AnyObject {

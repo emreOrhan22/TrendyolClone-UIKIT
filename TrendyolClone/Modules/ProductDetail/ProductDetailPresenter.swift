@@ -31,6 +31,11 @@ class ProductDetailPresenter: ProductDetailPresenterProtocol {
         // Favori durumunu Interactor üzerinden değiştir
         interactor?.toggleFavorite(productId: product.id)
     }
+    
+    func addToCart() {
+        // Sepete ekleme işlemini Interactor üzerinden yap
+        interactor?.addToCart(productId: product.id)
+    }
 }
 
 // MARK: - Interactor Output
@@ -44,6 +49,11 @@ extension ProductDetailPresenter: ProductDetailInteractorOutputProtocol {
     func didToggleFavorite(isFavorite: Bool) {
         // Favori durumu değiştirildi, View'ı güncelle
         view?.updateFavoriteButton(isFavorite: isFavorite)
+    }
+    
+    func didAddToCart() {
+        // Sepete eklendi - View'a bildir (toast mesajı gösterebilir)
+        // Şimdilik sadece başarılı olduğunu biliyoruz
     }
 }
 

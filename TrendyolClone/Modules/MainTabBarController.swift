@@ -9,9 +9,29 @@ import UIKit
 
 class MainTabBarController: UITabBarController {
     
+    private var cartTabBarItem: UITabBarItem?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTabBar()
+        updateCartBadge()
+        
+        // Sepet değiştiğinde badge'i güncelle
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateCartBadge),
+            name: NSNotification.Name("CartDidUpdate"),
+            object: nil
+        )
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateCartBadge()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     private func setupTabBar() {
@@ -25,17 +45,14 @@ class MainTabBarController: UITabBarController {
         let favoritesNav = UINavigationController(rootViewController: favoritesVC)
         favoritesNav.tabBarItem = UITabBarItem(title: "Favorilerim", image: UIImage(systemName: "heart"), selectedImage: UIImage(systemName: "heart.fill"))
         
-        // Sepet (placeholder)
-        let cartVC = UIViewController()
-        cartVC.view.backgroundColor = .white
-        cartVC.title = "Sepetim"
+        // Sepet - VIPER modülü
+        let cartVC = CartRouter.createModule()
         let cartNav = UINavigationController(rootViewController: cartVC)
         cartNav.tabBarItem = UITabBarItem(title: "Sepetim", image: UIImage(systemName: "cart"), selectedImage: UIImage(systemName: "cart.fill"))
+        cartTabBarItem = cartNav.tabBarItem
         
-        // Hesabım (placeholder)
-        let accountVC = UIViewController()
-        accountVC.view.backgroundColor = .white
-        accountVC.title = "Hesabım"
+        // Hesabım - VIPER modülü
+        let accountVC = AccountRouter.createModule()
         let accountNav = UINavigationController(rootViewController: accountVC)
         accountNav.tabBarItem = UITabBarItem(title: "Hesabım", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
         
@@ -54,6 +71,18 @@ class MainTabBarController: UITabBarController {
             if #available(iOS 15.0, *) {
                 tabBar.scrollEdgeAppearance = appearance
             }
+        }
+    }
+    
+    // MARK: - Badge Update
+    @objc private func updateCartBadge() {
+        let cartItemCount = CartManager.shared.getTotalItemCount()
+        
+        if cartItemCount > 0 {
+            cartTabBarItem?.badgeValue = "\(cartItemCount)"
+            cartTabBarItem?.badgeColor = .systemOrange
+        } else {
+            cartTabBarItem?.badgeValue = nil
         }
     }
 }

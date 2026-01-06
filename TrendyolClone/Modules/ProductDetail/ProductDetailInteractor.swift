@@ -29,5 +29,13 @@ class ProductDetailInteractor: ProductDetailInteractorProtocol {
             self?.presenter?.didToggleFavorite(isFavorite: isFavorite)
         }
     }
+    
+    /// Sepete ürün ekle
+    func addToCart(productId: Int) {
+        Task { @MainActor [weak self] in
+            CartManager.shared.addToCart(productId: productId)
+            self?.presenter?.didAddToCart()
+        }
+    }
 }
 
