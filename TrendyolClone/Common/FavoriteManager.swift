@@ -42,6 +42,11 @@ final class FavoriteManager {
         }
     }
     
+    /// Tüm favori ürün ID'lerini döndürür
+    func getFavoriteIds() -> [Int] {
+        return getFavorites()
+    }
+    
     private func getFavorites() -> [Int] {
         return userDefaults.array(forKey: favoritesKey) as? [Int] ?? []
     }

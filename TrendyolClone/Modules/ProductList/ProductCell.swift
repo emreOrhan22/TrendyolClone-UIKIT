@@ -163,10 +163,12 @@ class ProductCell: UITableViewCell {
         titleLabel.text = product.title
         priceLabel.text = String(format: "%.2f TL", product.price)
         
-        // Görseli yükle
+        // Görseli yükle - Async/await ile
         productImageView.image = nil
-        ImageLoader.shared.loadImage(from: product.image) { [weak self] image in
-            self?.productImageView.image = image
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let image = await ImageLoader.shared.loadImage(from: product.image)
+            self.productImageView.image = image
         }
         
         // Rating göster

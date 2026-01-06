@@ -15,13 +15,30 @@ protocol ProductDetailViewProtocol: AnyObject {
 
 protocol ProductDetailPresenterProtocol: AnyObject {
     var view: ProductDetailViewProtocol? { get set }
+    var interactor: ProductDetailInteractorProtocol? { get set }
     var router: ProductDetailRouterProtocol? { get set }
     
     func viewDidLoad()
     func toggleFavorite()
 }
 
+// MARK: - Interactor Protocol
+/// Interactor katmanı sözleşmesi - Veriyi kim getirecek?
+protocol ProductDetailInteractorProtocol: AnyObject {
+    var presenter: ProductDetailInteractorOutputProtocol? { get set }
+    func checkFavoriteStatus(productId: Int)
+    func toggleFavorite(productId: Int)
+}
+
+// MARK: - Interactor Output Protocol
+/// Interactor çıkış sözleşmesi - Veri gelince kime haber verilecek?
+protocol ProductDetailInteractorOutputProtocol: AnyObject {
+    func didCheckFavoriteStatus(isFavorite: Bool)
+    func didToggleFavorite(isFavorite: Bool)
+}
+
 protocol ProductDetailRouterProtocol: AnyObject {
     static func createModule(with product: Product) -> UIViewController
+    var viewController: UIViewController? { get set }
 }
 

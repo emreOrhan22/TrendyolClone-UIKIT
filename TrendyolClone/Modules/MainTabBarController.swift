@@ -20,10 +20,8 @@ class MainTabBarController: UITabBarController {
         let homeNav = UINavigationController(rootViewController: productListVC)
         homeNav.tabBarItem = UITabBarItem(title: "Anasayfa", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
         
-        // Favoriler (placeholder)
-        let favoritesVC = UIViewController()
-        favoritesVC.view.backgroundColor = .white
-        favoritesVC.title = "Favorilerim"
+        // Favoriler - VIPER modülü
+        let favoritesVC = FavoritesRouter.createModule()
         let favoritesNav = UINavigationController(rootViewController: favoritesVC)
         favoritesNav.tabBarItem = UITabBarItem(title: "Favorilerim", image: UIImage(systemName: "heart"), selectedImage: UIImage(systemName: "heart.fill"))
         

@@ -140,8 +140,11 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         categoryLabel.text = LocalizationHelper.shared.localizedCategory(product.category).uppercased()
         descriptionLabel.text = product.description
         
-        ImageLoader.shared.loadImage(from: product.image) { [weak self] image in
-            self?.productImageView.image = image
+        // Async/await ile görsel yükleme - Modern Swift yaklaşımı
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let image = await ImageLoader.shared.loadImage(from: product.image)
+            self.productImageView.image = image
         }
     }
     

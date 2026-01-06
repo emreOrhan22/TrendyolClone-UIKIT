@@ -115,6 +115,9 @@ class ProductHorizontalCell: UICollectionViewCell {
     private let titleLabel = UILabel()
     private let priceLabel = UILabel()
     
+    var onFavoriteTapped: ((Int) -> Void)?
+    private var productId: Int?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -151,6 +154,7 @@ class ProductHorizontalCell: UICollectionViewCell {
         favoriteButton.backgroundColor = .white
         favoriteButton.layer.cornerRadius = 15
         favoriteButton.translatesAutoresizingMaskIntoConstraints = false
+        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
         
         titleLabel.font = .systemFont(ofSize: 12, weight: .medium)
         titleLabel.textColor = .black
@@ -193,15 +197,38 @@ class ProductHorizontalCell: UICollectionViewCell {
     }
     
     func configure(with product: Product) {
+        productId = product.id
         titleLabel.text = product.title
         priceLabel.text = String(format: "%.2f TL", product.price)
         
-        ImageLoader.shared.loadImage(from: product.image) { [weak self] image in
-            self?.productImageView.image = image
+        // Async/await ile görsel yükleme
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let image = await ImageLoader.shared.loadImage(from: product.image)
+            self.productImageView.image = image
         }
         
+        // Favori durumunu güncelle
         let isFavorite = FavoriteManager.shared.isFavorite(productId: product.id)
         favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+    }
+    
+    @objc private func favoriteButtonTapped() {
+        guard let productId = productId else { return }
+        FavoriteManager.shared.toggleFavorite(productId: productId)
+        let isFavorite = FavoriteManager.shared.isFavorite(productId: productId)
+        favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+        onFavoriteTapped?(productId)
+    }
+    
+    // MARK: - Reuse
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        productImageView.image = nil
+        titleLabel.text = nil
+        priceLabel.text = nil
+        productId = nil
+        onFavoriteTapped = nil
     }
 }
 
