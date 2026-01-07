@@ -29,8 +29,8 @@ class CartInteractor: CartInteractorProtocol {
         // Yeni async task başlat
         fetchTask = Task { [weak self] in
             do {
-                // 1. CartManager'dan sepet öğelerini al
-                let cartItems = CartManager.shared.getCartItems()
+                // 1. CartManager'dan sepet öğelerini al (Actor'a await ile erişim)
+                let cartItems = await CartManager.shared.getCartItems()
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled, let self = self else { return }
@@ -68,23 +68,35 @@ class CartInteractor: CartInteractorProtocol {
     }
     
     func increaseQuantity(productId: Int) {
-        CartManager.shared.increaseQuantity(productId: productId)
-        presenter?.didUpdateCart()
+        // Actor'a await ile erişim
+        Task { [weak self] in
+            await CartManager.shared.increaseQuantity(productId: productId)
+            self?.presenter?.didUpdateCart()
+        }
     }
     
     func decreaseQuantity(productId: Int) {
-        CartManager.shared.decreaseQuantity(productId: productId)
-        presenter?.didUpdateCart()
+        // Actor'a await ile erişim
+        Task { [weak self] in
+            await CartManager.shared.decreaseQuantity(productId: productId)
+            self?.presenter?.didUpdateCart()
+        }
     }
     
     func removeItem(productId: Int) {
-        CartManager.shared.removeFromCart(productId: productId)
-        presenter?.didUpdateCart()
+        // Actor'a await ile erişim
+        Task { [weak self] in
+            await CartManager.shared.removeFromCart(productId: productId)
+            self?.presenter?.didUpdateCart()
+        }
     }
     
     func clearCart() {
-        CartManager.shared.clearCart()
-        presenter?.didUpdateCart()
+        // Actor'a await ile erişim
+        Task { [weak self] in
+            await CartManager.shared.clearCart()
+            self?.presenter?.didUpdateCart()
+        }
     }
     
     /// Tüm aktif task'ları iptal et - hafıza temizliği için

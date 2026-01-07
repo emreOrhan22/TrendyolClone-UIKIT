@@ -29,8 +29,8 @@ class FavoritesInteractor: FavoritesInteractorProtocol {
         // Yeni async task başlat
         fetchTask = Task { [weak self] in
             do {
-                // 1. FavoriteManager'dan favori ID'leri al
-                let favoriteIds = FavoriteManager.shared.getFavoriteIds()
+                // 1. FavoriteManager'dan favori ID'leri al (Actor'a await ile erişim)
+                let favoriteIds = await FavoriteManager.shared.getFavoriteIds()
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled, let self = self else { return }

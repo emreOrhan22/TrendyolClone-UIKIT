@@ -1,5 +1,5 @@
 //
-//  ProductListViewController.swift
+//  DiscoveryViewController.swift
 //  TrendyolClone
 //
 //  Created by Emre ORHAN on 27.12.2025.
@@ -7,9 +7,9 @@
 
 import UIKit
 
-class ProductListViewController: UIViewController, ProductListViewProtocol {
+class DiscoveryViewController: UIViewController, DiscoveryViewProtocol {
     
-    var presenter: ProductListPresenterProtocol?
+    var presenter: DiscoveryPresenterProtocol?
     
     private let tableView = UITableView()
     private let searchController = UISearchController(searchResultsController: nil)
@@ -121,7 +121,7 @@ class ProductListViewController: UIViewController, ProductListViewProtocol {
 }
 
 // MARK: - UITableViewDataSource
-extension ProductListViewController: UITableViewDataSource {
+extension DiscoveryViewController: UITableViewDataSource {
     
     func numberOfSections(in tableView: UITableView) -> Int {
         return 4 // Kategoriler + Banner + Özellikler + Yatay Ürünler
@@ -176,7 +176,7 @@ extension ProductListViewController: UITableViewDataSource {
 }
 
 // MARK: - UITableViewDelegate
-extension ProductListViewController: UITableViewDelegate {
+extension DiscoveryViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
@@ -192,7 +192,7 @@ extension ProductListViewController: UITableViewDelegate {
 }
 
 // MARK: - UISearchResultsUpdating
-extension ProductListViewController: UISearchResultsUpdating {
+extension DiscoveryViewController: UISearchResultsUpdating {
     
     func updateSearchResults(for searchController: UISearchController) {
         let searchText = searchController.searchBar.text ?? ""

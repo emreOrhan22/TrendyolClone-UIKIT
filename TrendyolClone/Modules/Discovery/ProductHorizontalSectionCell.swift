@@ -218,17 +218,24 @@ class ProductHorizontalCell: UICollectionViewCell {
             self.productImageView.image = image
         }
         
-        // Favori durumunu güncelle
-        let isFavorite = FavoriteManager.shared.isFavorite(productId: product.id)
-        favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+        // Favori durumunu güncelle (Actor'a await ile erişim)
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: product.id)
+            self.favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+        }
     }
     
     @objc private func favoriteButtonTapped() {
         guard let productId = productId else { return }
-        FavoriteManager.shared.toggleFavorite(productId: productId)
-        let isFavorite = FavoriteManager.shared.isFavorite(productId: productId)
-        favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
-        onFavoriteTapped?(productId)
+        // Actor'a await ile erişim
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            await FavoriteManager.shared.toggleFavorite(productId: productId)
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: productId)
+            self.favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+            self.onFavoriteTapped?(productId)
+        }
     }
     
     // MARK: - Reuse

@@ -13,27 +13,28 @@ class ProductDetailInteractor: ProductDetailInteractorProtocol {
     
     /// Favori durumunu kontrol et
     func checkFavoriteStatus(productId: Int) {
-        // Async/await kullanarak favori durumunu kontrol et
+        // Actor'a await ile erişim
         Task { @MainActor [weak self] in
-            let isFavorite = FavoriteManager.shared.isFavorite(productId: productId)
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: productId)
             self?.presenter?.didCheckFavoriteStatus(isFavorite: isFavorite)
         }
     }
     
     /// Favori durumunu değiştir (ekle/çıkar)
     func toggleFavorite(productId: Int) {
-        // Async/await kullanarak favori durumunu değiştir
+        // Actor'a await ile erişim
         Task { @MainActor [weak self] in
-            FavoriteManager.shared.toggleFavorite(productId: productId)
-            let isFavorite = FavoriteManager.shared.isFavorite(productId: productId)
+            await FavoriteManager.shared.toggleFavorite(productId: productId)
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: productId)
             self?.presenter?.didToggleFavorite(isFavorite: isFavorite)
         }
     }
     
     /// Sepete ürün ekle
     func addToCart(productId: Int) {
+        // Actor'a await ile erişim
         Task { @MainActor [weak self] in
-            CartManager.shared.addToCart(productId: productId)
+            await CartManager.shared.addToCart(productId: productId)
             self?.presenter?.didAddToCart()
         }
     }

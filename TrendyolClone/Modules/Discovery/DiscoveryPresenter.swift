@@ -1,5 +1,5 @@
 //
-//  ProductListPresenter.swift
+//  DiscoveryPresenter.swift
 //  TrendyolClone
 //
 //  Created by Emre ORHAN on 27.12.2025.
@@ -7,11 +7,11 @@
 
 import Foundation
 
-class ProductListPresenter: ProductListPresenterProtocol {
+class DiscoveryPresenter: DiscoveryPresenterProtocol {
     
-    weak var view: ProductListViewProtocol?
-    var interactor: ProductListInteractorProtocol?
-    var router: ProductListRouterProtocol?
+    weak var view: DiscoveryViewProtocol?
+    var interactor: DiscoveryInteractorProtocol?
+    var router: DiscoveryRouterProtocol?
     
     private var products: [Product] = []
     private var filteredProducts: [Product] = []
@@ -85,7 +85,7 @@ class ProductListPresenter: ProductListPresenterProtocol {
 }
 
 // MARK: - Interactor Output
-extension ProductListPresenter: ProductListInteractorOutputProtocol {
+extension DiscoveryPresenter: DiscoveryInteractorOutputProtocol {
     
     func didFetchProducts(_ products: [Product]) {
         // Eğer kategori seçiliyse, sadece o kategorinin ürünlerini göster

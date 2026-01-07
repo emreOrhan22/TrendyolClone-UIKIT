@@ -43,9 +43,12 @@ class FavoritesPresenter: FavoritesPresenterProtocol {
     
     func didRemoveFavorite(at index: Int) {
         guard let product = productAt(index) else { return }
-        FavoriteManager.shared.removeFavorite(productId: product.id)
-        // Favorileri yenile
-        viewWillAppear()
+        // Actor'a await ile erişim
+        Task { [weak self] in
+            await FavoriteManager.shared.removeFavorite(productId: product.id)
+            // Favorileri yenile
+            self?.viewWillAppear()
+        }
     }
 }
 

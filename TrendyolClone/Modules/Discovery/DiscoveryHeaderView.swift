@@ -1,5 +1,5 @@
 //
-//  ProductListHeaderView.swift
+//  DiscoveryHeaderView.swift
 //  TrendyolClone
 //
 //  Created by Emre ORHAN on 27.12.2025.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ProductListHeaderView: UIView {
+class DiscoveryHeaderView: UIView {
     
     private let bannerImageView: UIImageView = {
         let imageView = UIImageView()

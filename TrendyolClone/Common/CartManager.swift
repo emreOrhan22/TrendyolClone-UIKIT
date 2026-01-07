@@ -18,7 +18,14 @@ struct CartItem: Codable {
     }
 }
 
-final class CartManager {
+/// Actor-based CartManager - Modern Swift 5.5+ yaklaşımı
+/// Actor kullanarak thread-safety otomatik sağlanır (Data Race önlenir)
+/// 
+/// NEDEN ACTOR?
+/// - Read-modify-write pattern thread-safe değildi
+/// - Eşzamanlı erişimde veri kaybı riski vardı
+/// - Actor, tüm state değişikliklerini seri hale getirir (otomatik lock)
+actor CartManager {
     
     static let shared = CartManager()
     
@@ -30,6 +37,7 @@ final class CartManager {
     // MARK: - Add/Remove Operations
     
     /// Sepete ürün ekle veya miktarını artır
+    /// Actor içinde olduğu için otomatik thread-safe
     func addToCart(productId: Int, quantity: Int = 1) {
         var cartItems = getCartItems()
         
@@ -45,6 +53,7 @@ final class CartManager {
     }
     
     /// Sepetten ürün çıkar
+    /// Actor içinde olduğu için otomatik thread-safe
     func removeFromCart(productId: Int) {
         var cartItems = getCartItems()
         cartItems.removeAll { $0.productId == productId }
@@ -52,6 +61,7 @@ final class CartManager {
     }
     
     /// Sepetteki ürün miktarını güncelle
+    /// Actor içinde olduğu için otomatik thread-safe
     func updateQuantity(productId: Int, quantity: Int) {
         guard quantity > 0 else {
             removeFromCart(productId: productId)
@@ -66,6 +76,7 @@ final class CartManager {
     }
     
     /// Sepetteki ürün miktarını artır
+    /// Actor içinde olduğu için otomatik thread-safe
     func increaseQuantity(productId: Int) {
         var cartItems = getCartItems()
         if let index = cartItems.firstIndex(where: { $0.productId == productId }) {
@@ -75,6 +86,7 @@ final class CartManager {
     }
     
     /// Sepetteki ürün miktarını azalt
+    /// Actor içinde olduğu için otomatik thread-safe
     func decreaseQuantity(productId: Int) {
         var cartItems = getCartItems()
         if let index = cartItems.firstIndex(where: { $0.productId == productId }) {
@@ -91,6 +103,7 @@ final class CartManager {
     // MARK: - Query Operations
     
     /// Sepetteki tüm ürün ID'lerini ve miktarlarını döndürür
+    /// Actor içinde olduğu için otomatik thread-safe
     func getCartItems() -> [CartItem] {
         guard let data = userDefaults.data(forKey: cartKey),
               let items = try? JSONDecoder().decode([CartItem].self, from: data) else {
@@ -100,34 +113,44 @@ final class CartManager {
     }
     
     /// Sepetteki ürün miktarını döndürür
+    /// Actor içinde olduğu için otomatik thread-safe
     func getQuantity(productId: Int) -> Int {
         return getCartItems().first(where: { $0.productId == productId })?.quantity ?? 0
     }
     
     /// Ürün sepette var mı kontrol et
+    /// Actor içinde olduğu için otomatik thread-safe
     func isInCart(productId: Int) -> Bool {
         return getCartItems().contains(where: { $0.productId == productId })
     }
     
     /// Sepetteki toplam ürün sayısını döndürür
+    /// Actor içinde olduğu için otomatik thread-safe
     func getTotalItemCount() -> Int {
         return getCartItems().reduce(0) { $0 + $1.quantity }
     }
     
     /// Sepeti temizle
+    /// Actor içinde olduğu için otomatik thread-safe
     func clearCart() {
         userDefaults.removeObject(forKey: cartKey)
-        // Sepet temizlendiğinde bildirim gönder
-        NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+        // Sepet temizlendiğinde bildirim gönder (main thread'de)
+        Task { @MainActor in
+            NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+        }
     }
     
     // MARK: - Private Methods
     
+    /// Sepet öğelerini kaydet ve bildirim gönder
+    /// Actor içinde olduğu için otomatik thread-safe
     private func saveCartItems(_ items: [CartItem]) {
         if let data = try? JSONEncoder().encode(items) {
             userDefaults.set(data, forKey: cartKey)
-            // Sepet değiştiğinde bildirim gönder
-            NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+            // Sepet değiştiğinde bildirim gönder (main thread'de)
+            Task { @MainActor in
+                NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+            }
         }
     }
 }

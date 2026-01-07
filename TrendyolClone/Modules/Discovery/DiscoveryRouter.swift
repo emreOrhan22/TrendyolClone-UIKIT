@@ -1,5 +1,5 @@
 //
-//  ProductListRouter.swift
+//  DiscoveryRouter.swift
 //  TrendyolClone
 //
 //  Created by Emre ORHAN on 27.12.2025.
@@ -7,15 +7,15 @@
 
 import UIKit
 
-class ProductListRouter: ProductListRouterProtocol {
+class DiscoveryRouter: DiscoveryRouterProtocol {
     
     weak var viewController: UIViewController?
     
     static func createModule() -> UIViewController {
-        let view = ProductListViewController()
-        let presenter = ProductListPresenter()
-        let interactor = ProductListInteractor()
-        let router = ProductListRouter()
+        let view = DiscoveryViewController()
+        let presenter = DiscoveryPresenter()
+        let interactor = DiscoveryInteractor()
+        let router = DiscoveryRouter()
         
         // Katmanları birbirine "enjekte" ediyoruz (Dependency Injection)
         view.presenter = presenter

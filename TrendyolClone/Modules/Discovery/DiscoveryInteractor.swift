@@ -1,5 +1,5 @@
 //
-//  ProductListInteractor.swift
+//  DiscoveryInteractor.swift
 //  TrendyolClone
 //
 //  Created by Emre ORHAN on 27.12.2025.
@@ -7,9 +7,9 @@
 
 import Foundation
 
-class ProductListInteractor: ProductListInteractorProtocol {
+class DiscoveryInteractor: DiscoveryInteractorProtocol {
     
-    weak var presenter: ProductListInteractorOutputProtocol?
+    weak var presenter: DiscoveryInteractorOutputProtocol?
     
     // Dependency Injection - Protocol-based service
     private let productService: ProductServiceProtocol

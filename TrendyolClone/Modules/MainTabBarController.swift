@@ -35,9 +35,9 @@ class MainTabBarController: UITabBarController {
     }
     
     private func setupTabBar() {
-        // Ana Sayfa
-        let productListVC = ProductListRouter.createModule()
-        let homeNav = UINavigationController(rootViewController: productListVC)
+        // Ana Sayfa (Discovery)
+        let discoveryVC = DiscoveryRouter.createModule()
+        let homeNav = UINavigationController(rootViewController: discoveryVC)
         homeNav.tabBarItem = UITabBarItem(title: "Anasayfa", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
         
         // Favoriler - VIPER modülü
@@ -76,13 +76,17 @@ class MainTabBarController: UITabBarController {
     
     // MARK: - Badge Update
     @objc private func updateCartBadge() {
-        let cartItemCount = CartManager.shared.getTotalItemCount()
-        
-        if cartItemCount > 0 {
-            cartTabBarItem?.badgeValue = "\(cartItemCount)"
-            cartTabBarItem?.badgeColor = .systemOrange
-        } else {
-            cartTabBarItem?.badgeValue = nil
+        // Actor'a await ile erişim (Task içinde)
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let cartItemCount = await CartManager.shared.getTotalItemCount()
+            
+            if cartItemCount > 0 {
+                self.cartTabBarItem?.badgeValue = "\(cartItemCount)"
+                self.cartTabBarItem?.badgeColor = .systemOrange
+            } else {
+                self.cartTabBarItem?.badgeValue = nil
+            }
         }
     }
 }

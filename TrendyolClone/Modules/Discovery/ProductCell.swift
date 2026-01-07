@@ -179,8 +179,12 @@ class ProductCell: UITableViewCell {
             ratingStackView.isHidden = true
         }
         
-        // Favori durumunu güncelle
-        updateFavoriteButton(isFavorite: FavoriteManager.shared.isFavorite(productId: product.id))
+        // Favori durumunu güncelle (Actor'a await ile erişim)
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: product.id)
+            self.updateFavoriteButton(isFavorite: isFavorite)
+        }
         
         // Badge'i göster/gizle (şimdilik her zaman göster)
         badgeLabel.isHidden = false
@@ -210,10 +214,14 @@ class ProductCell: UITableViewCell {
     
     @objc private func favoriteButtonTapped() {
         guard let productId = productId else { return }
-        FavoriteManager.shared.toggleFavorite(productId: productId)
-        let isFavorite = FavoriteManager.shared.isFavorite(productId: productId)
-        updateFavoriteButton(isFavorite: isFavorite)
-        onFavoriteTapped?(productId)
+        // Actor'a await ile erişim
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            await FavoriteManager.shared.toggleFavorite(productId: productId)
+            let isFavorite = await FavoriteManager.shared.isFavorite(productId: productId)
+            self.updateFavoriteButton(isFavorite: isFavorite)
+            self.onFavoriteTapped?(productId)
+        }
     }
     
     private func updateFavoriteButton(isFavorite: Bool) {
