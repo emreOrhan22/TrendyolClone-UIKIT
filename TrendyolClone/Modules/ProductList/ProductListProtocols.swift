@@ -24,12 +24,10 @@ protocol ProductListPresenterProtocol: AnyObject {
     func viewDidLoad()
     func numberOfRows() -> Int
     func productAt(_ index: Int) -> Product?
-    func getAllProducts() -> [Product]
     func getCategories() -> [String]
     func searchProducts(query: String)
     func filterByCategory(_ category: String)
     func didSelectProduct(at index: Int)
-    func didSelectProduct(product: Product)
 }
 
 // 3. Interactor Sözleşmesi (Veriyi kim getirecek?)

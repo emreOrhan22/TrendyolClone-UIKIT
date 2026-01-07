@@ -11,8 +11,16 @@ class FavoritesInteractor: FavoritesInteractorProtocol {
     
     weak var presenter: FavoritesInteractorOutputProtocol?
     
+    // Dependency Injection - Protocol-based service
+    private let productService: ProductServiceProtocol
+    
     // Task cancellation için - hafıza yönetimi
     private var fetchTask: Task<Void, Never>?
+    
+    // Initializer - Dependency Injection
+    init(productService: ProductServiceProtocol = NetworkManager.shared) {
+        self.productService = productService
+    }
     
     func fetchFavoriteProducts() {
         // Önceki task'ı iptal et (yeni istek gelirse)
@@ -25,18 +33,16 @@ class FavoritesInteractor: FavoritesInteractorProtocol {
                 let favoriteIds = FavoriteManager.shared.getFavoriteIds()
                 
                 // Task iptal edildiyse devam etme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
                 // Eğer favori yoksa boş array döndür
                 guard !favoriteIds.isEmpty else {
-                    await MainActor.run {
-                        self?.presenter?.didFetchFavoriteProducts([])
-                    }
+                    self.presenter?.didFetchFavoriteProducts([])
                     return
                 }
                 
                 // 2. Tüm ürünleri çek (verimlilik için - tek network isteği)
-                let allProducts = try await NetworkManager.shared.fetchProducts()
+                let allProducts = try await self.productService.fetchProducts()
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled else { return }
@@ -49,18 +55,14 @@ class FavoritesInteractor: FavoritesInteractorProtocol {
                     favoriteProducts.first { $0.id == id }
                 }
                 
-                // Presenter'a sonucu bildir
-                await MainActor.run {
-                    self?.presenter?.didFetchFavoriteProducts(sortedProducts)
-                }
+                // Interactor UI bilmemeli - Ham veriyi döndür
+                self.presenter?.didFetchFavoriteProducts(sortedProducts)
             } catch {
                 // Task iptal edildiyse hata gönderme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
                 // Hata durumunu presenter'a bildir
-                await MainActor.run {
-                    self?.presenter?.didFailWithError(error)
-                }
+                self.presenter?.didFailWithError(error)
             }
         }
     }

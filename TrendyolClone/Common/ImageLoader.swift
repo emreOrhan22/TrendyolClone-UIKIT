@@ -7,15 +7,17 @@
 
 import UIKit
 
-final class ImageLoader {
+/// Actor-based ImageLoader - Modern Swift 5.5+ yaklaşımı
+/// Actor kullanarak thread-safety otomatik sağlanır (Data Race önlenir)
+actor ImageLoader {
     
     static let shared = ImageLoader()
     
     private let cache = NSCache<NSString, UIImage>()
     
     // Task cancellation için - hafıza yönetimi için önemli
+    // Actor içinde olduğu için thread-safe (DispatchQueue'a gerek yok)
     private var runningTasks: [String: Task<UIImage?, Never>] = [:]
-    private let taskQueue = DispatchQueue(label: "com.trendyol.imageLoader.tasks")
     
     private init() {
         cache.countLimit = 100
@@ -51,6 +53,7 @@ final class ImageLoader {
                 }
                 
                 // Cache'e kaydet - hafıza yönetimi için
+                // Actor içinde olduğu için thread-safe
                 self.cache.setObject(image, forKey: urlString as NSString)
                 
                 return image
@@ -61,47 +64,34 @@ final class ImageLoader {
         }
         
         // Task'ı kaydet (cancellation için)
-        saveTask(task, for: urlString)
+        // Actor içinde olduğu için thread-safe (DispatchQueue'a gerek yok)
+        runningTasks[urlString] = task
         
         // Task'ın tamamlanmasını bekle
         let image = await task.value
         
         // Task tamamlandı, listeden çıkar
-        removeTask(for: urlString)
+        // Actor içinde olduğu için thread-safe
+        runningTasks.removeValue(forKey: urlString)
         
         return image
     }
     
     // MARK: - Task Management (Hafıza yönetimi için)
+    /// Önceki task'ı iptal et - Actor içinde thread-safe
     private func cancelTask(for urlString: String) {
-        taskQueue.sync {
-            if let existingTask = runningTasks[urlString] {
-                existingTask.cancel()
-                runningTasks.removeValue(forKey: urlString)
-            }
-        }
-    }
-    
-    private func saveTask(_ task: Task<UIImage?, Never>, for urlString: String) {
-        taskQueue.sync {
-            runningTasks[urlString] = task
-        }
-    }
-    
-    private func removeTask(for urlString: String) {
-        taskQueue.sync {
+        if let existingTask = runningTasks[urlString] {
+            existingTask.cancel()
             runningTasks.removeValue(forKey: urlString)
         }
     }
     
     /// Tüm aktif task'ları iptal et - hafıza temizliği için
     func cancelAllTasks() {
-        taskQueue.sync {
-            for task in runningTasks.values {
-                task.cancel()
-            }
-            runningTasks.removeAll()
+        for task in runningTasks.values {
+            task.cancel()
         }
+        runningTasks.removeAll()
     }
 }
 

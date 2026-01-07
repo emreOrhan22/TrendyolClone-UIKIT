@@ -11,10 +11,18 @@ class ProductListInteractor: ProductListInteractorProtocol {
     
     weak var presenter: ProductListInteractorOutputProtocol?
     
+    // Dependency Injection - Protocol-based service
+    private let productService: ProductServiceProtocol
+    
     // Task cancellation için - hafıza yönetimi
     private var fetchProductsTask: Task<Void, Never>?
     private var fetchCategoriesTask: Task<Void, Never>?
     private var fetchByCategoryTask: Task<Void, Never>?
+    
+    // Initializer - Dependency Injection
+    init(productService: ProductServiceProtocol = NetworkManager.shared) {
+        self.productService = productService
+    }
     
     func fetchProducts() {
         // Önceki task'ı iptal et (yeni istek gelirse)
@@ -23,24 +31,20 @@ class ProductListInteractor: ProductListInteractorProtocol {
         // Yeni async task başlat
         fetchProductsTask = Task { [weak self] in
             do {
-                // Async/await ile network isteği - closure yerine
-                let products = try await NetworkManager.shared.fetchProducts()
+                // Async/await ile network isteği - Dependency Injection kullan
+                let products = try await self?.productService.fetchProducts() ?? []
                 
                 // Task iptal edildiyse devam etme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
-                // Presenter'a sonucu bildir
-                await MainActor.run {
-                    self?.presenter?.didFetchProducts(products)
-                }
+                // Interactor UI bilmemeli - Ham veriyi döndür
+                self.presenter?.didFetchProducts(products)
             } catch {
                 // Task iptal edildiyse hata gönderme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
                 // Hata durumunu presenter'a bildir
-                await MainActor.run {
-                    self?.presenter?.didFailWithError(error)
-                }
+                self.presenter?.didFailWithError(error)
             }
         }
     }
@@ -51,19 +55,15 @@ class ProductListInteractor: ProductListInteractorProtocol {
         
         fetchCategoriesTask = Task { [weak self] in
             do {
-                let categories = try await NetworkManager.shared.fetchCategories()
+                let categories = try await self?.productService.fetchCategories() ?? []
                 
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
-                await MainActor.run {
-                    self?.presenter?.didFetchCategories(categories)
-                }
+                self.presenter?.didFetchCategories(categories)
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
-                await MainActor.run {
-                    self?.presenter?.didFailWithError(error)
-                }
+                self.presenter?.didFailWithError(error)
             }
         }
     }
@@ -74,19 +74,15 @@ class ProductListInteractor: ProductListInteractorProtocol {
         
         fetchByCategoryTask = Task { [weak self] in
             do {
-                let products = try await NetworkManager.shared.fetchProductsByCategory(category: category)
+                let products = try await self?.productService.fetchProductsByCategory(category: category) ?? []
                 
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
-                await MainActor.run {
-                    self?.presenter?.didFetchProducts(products)
-                }
+                self.presenter?.didFetchProducts(products)
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
-                await MainActor.run {
-                    self?.presenter?.didFailWithError(error)
-                }
+                self.presenter?.didFailWithError(error)
             }
         }
     }

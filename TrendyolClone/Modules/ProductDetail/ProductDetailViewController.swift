@@ -159,11 +159,13 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
     
     // MARK: - ProductDetailViewProtocol
     func showProduct(_ product: Product) {
-        titleLabel.text = product.title
-        priceLabel.text = String(format: "%.2f TL", product.price)
-        // Kategoriyi Türkçeleştir
-        categoryLabel.text = LocalizationHelper.shared.localizedCategory(product.category).uppercased()
-        descriptionLabel.text = product.description
+        DispatchQueue.main.async { [weak self] in
+            self?.titleLabel.text = product.title
+            self?.priceLabel.text = String(format: "%.2f TL", product.price)
+            // Kategoriyi Türkçeleştir
+            self?.categoryLabel.text = LocalizationHelper.shared.localizedCategory(product.category).uppercased()
+            self?.descriptionLabel.text = product.description
+        }
         
         // Async/await ile görsel yükleme - Modern Swift yaklaşımı
         Task { @MainActor [weak self] in
@@ -174,14 +176,18 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
     }
     
     func showError(_ message: String) {
-        let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-        present(alert, animated: true)
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
     
     func updateFavoriteButton(isFavorite: Bool) {
-        let imageName = isFavorite ? "heart.fill" : "heart"
-        favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
+        DispatchQueue.main.async { [weak self] in
+            let imageName = isFavorite ? "heart.fill" : "heart"
+            self?.favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
+        }
     }
 }
 

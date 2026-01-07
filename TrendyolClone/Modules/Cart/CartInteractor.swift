@@ -11,8 +11,16 @@ class CartInteractor: CartInteractorProtocol {
     
     weak var presenter: CartInteractorOutputProtocol?
     
+    // Dependency Injection - Protocol-based service
+    private let productService: ProductServiceProtocol
+    
     // Task cancellation için - hafıza yönetimi
     private var fetchTask: Task<Void, Never>?
+    
+    // Initializer - Dependency Injection
+    init(productService: ProductServiceProtocol = NetworkManager.shared) {
+        self.productService = productService
+    }
     
     func fetchCartItems() {
         // Önceki task'ı iptal et (yeni istek gelirse)
@@ -25,18 +33,16 @@ class CartInteractor: CartInteractorProtocol {
                 let cartItems = CartManager.shared.getCartItems()
                 
                 // Task iptal edildiyse devam etme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
                 // Eğer sepet boşsa boş array döndür
                 guard !cartItems.isEmpty else {
-                    await MainActor.run {
-                        self?.presenter?.didFetchCartItems([])
-                    }
+                    self.presenter?.didFetchCartItems([])
                     return
                 }
                 
                 // 2. Tüm ürünleri çek (verimlilik için - tek network isteği)
-                let allProducts = try await NetworkManager.shared.fetchProducts()
+                let allProducts = try await self.productService.fetchProducts()
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled else { return }
@@ -49,18 +55,14 @@ class CartInteractor: CartInteractorProtocol {
                     return CartItemViewModel(product: product, quantity: cartItem.quantity)
                 }
                 
-                // Presenter'a sonucu bildir
-                await MainActor.run {
-                    self?.presenter?.didFetchCartItems(cartItemViewModels)
-                }
+                // Interactor UI bilmemeli - Ham veriyi döndür
+                self.presenter?.didFetchCartItems(cartItemViewModels)
             } catch {
                 // Task iptal edildiyse hata gönderme
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, let self = self else { return }
                 
                 // Hata durumunu presenter'a bildir
-                await MainActor.run {
-                    self?.presenter?.didFailWithError(error)
-                }
+                self.presenter?.didFailWithError(error)
             }
         }
     }

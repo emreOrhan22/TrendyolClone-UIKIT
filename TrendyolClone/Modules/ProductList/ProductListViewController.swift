@@ -93,22 +93,30 @@ class ProductListViewController: UIViewController, ProductListViewProtocol {
     }
 
     func reloadData() {
-        tableView.reloadData()
-        tableView.refreshControl?.endRefreshing()
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+            self?.tableView.refreshControl?.endRefreshing()
+        }
     }
 
     func showError(_ message: String) {
-        let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-        present(alert, animated: true)
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
     
     func showLoading() {
-        loadingIndicator.startAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.startAnimating()
+        }
     }
     
     func hideLoading() {
-        loadingIndicator.stopAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.stopAnimating()
+        }
     }
 }
 
@@ -145,13 +153,23 @@ extension ProductListViewController: UITableViewDataSource {
         } else {
             // Yatay Ürünler
             let cell = tableView.dequeueReusableCell(withIdentifier: "ProductHorizontalSectionCell", for: indexPath) as! ProductHorizontalSectionCell
-            if let products = presenter?.getAllProducts() {
-                cell.products = products
+            
+            // Index-based erişim - View Product bilgisine sahip olmamalı
+            cell.numberOfProducts = { [weak self] in
+                self?.presenter?.numberOfRows() ?? 0
             }
-            cell.onProductSelected = { [weak self] product in
-                // Ürün detay sayfasına git
-                self?.presenter?.didSelectProduct(product: product)
+            
+            cell.productAt = { [weak self] index in
+                self?.presenter?.productAt(index)
             }
+            
+            cell.onProductSelected = { [weak self] index in
+                self?.presenter?.didSelectProduct(at: index)
+            }
+            
+            // CollectionView'ı yenile
+            cell.reloadCollectionView()
+            
             return cell
         }
     }
@@ -162,7 +180,14 @@ extension ProductListViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        presenter?.didSelectProduct(at: indexPath.row)
+        // Ürün tıklamaları zaten ProductHorizontalSectionCell içindeki 
+        // CollectionView'dan closure (onProductSelected) ile yönetiliyor.
+        // Burada indexPath.row kullanmak yanlış çünkü:
+        // - Section 0: Kategoriler (ürün değil)
+        // - Section 1: Banner (ürün değil)
+        // - Section 2: Özellikler (ürün değil)
+        // - Section 3: Yatay Ürünler (zaten cell.onProductSelected ile yönetiliyor)
+        // Bu yüzden burada hiçbir işlem yapmıyoruz.
     }
 }
 

@@ -36,46 +36,28 @@ class ProductListPresenter: ProductListPresenterProtocol {
     }
     
     func searchProducts(query: String) {
-        // Arama yaparken mevcut ürün listesini kullan
-        // Eğer kategori seçiliyse, filteredProducts kullanılır (API'den o kategoriye ait ürünler gelmiş)
-        // Eğer kategori seçili değilse, products kullanılır (tüm ürünler)
-        let baseProducts = isSearching && selectedCategory != nil ? filteredProducts : products
+        // Arama mantığını sadeleştir
+        let baseProducts = selectedCategory != nil ? filteredProducts : products
         
         if query.isEmpty {
-            // Arama boşsa, kategori durumuna göre göster
-            if selectedCategory != nil {
-                // Kategori seçiliyse, filteredProducts'ı göster (API'den gelen kategori ürünleri)
-                isSearching = true
-            } else {
-                // Kategori seçili değilse, tüm ürünleri göster
-                isSearching = false
+            // Arama boşsa: Kategori seçiliyse filteredProducts, değilse products göster
+            isSearching = selectedCategory != nil
+            if !isSearching {
                 filteredProducts = []
             }
         } else {
-            // Arama yapılıyorsa, mevcut ürünler içinde filtrele
+            // Arama yapılıyorsa: Base products içinde filtrele
             isSearching = true
-            filteredProducts = baseProducts.filter { product in
-                product.title.lowercased().contains(query.lowercased())
+            filteredProducts = baseProducts.filter {
+                $0.title.lowercased().contains(query.lowercased())
             }
         }
+        
         view?.reloadData()
-    }
-    
-    func getAllProducts() -> [Product] {
-        // Yatay scroll için: Eğer kategori seçiliyse filteredProducts, değilse products
-        if isSearching && selectedCategory != nil {
-            return filteredProducts
-        } else {
-            return products
-        }
     }
     
     func didSelectProduct(at index: Int) {
         guard let product = productAt(index) else { return }
-        router?.navigateToProductDetail(product: product)
-    }
-    
-    func didSelectProduct(product: Product) {
         router?.navigateToProductDetail(product: product)
     }
     

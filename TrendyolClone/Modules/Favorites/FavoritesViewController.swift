@@ -129,32 +129,44 @@ class FavoritesViewController: UIViewController, FavoritesViewProtocol {
     
     // MARK: - FavoritesViewProtocol
     func reloadData() {
-        tableView.reloadData()
-        tableView.refreshControl?.endRefreshing()
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+            self?.tableView.refreshControl?.endRefreshing()
+        }
     }
     
     func showError(_ message: String) {
-        let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-        present(alert, animated: true)
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
     
     func showLoading() {
-        loadingIndicator.startAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.startAnimating()
+        }
     }
     
     func hideLoading() {
-        loadingIndicator.stopAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.stopAnimating()
+        }
     }
     
     func showEmptyState() {
-        emptyStateView.isHidden = false
-        tableView.isHidden = true
+        DispatchQueue.main.async { [weak self] in
+            self?.emptyStateView.isHidden = false
+            self?.tableView.isHidden = true
+        }
     }
     
     func hideEmptyState() {
-        emptyStateView.isHidden = true
-        tableView.isHidden = false
+        DispatchQueue.main.async { [weak self] in
+            self?.emptyStateView.isHidden = true
+            self?.tableView.isHidden = false
+        }
     }
 }
 

@@ -41,13 +41,19 @@ class ProductHorizontalSectionCell: UITableViewCell {
         return cv
     }()
     
-    var products: [Product] = [] {
+    // Index-based erişim - View Product bilgisine sahip olmamalı
+    var numberOfProducts: (() -> Int)? {
         didSet {
             collectionView.reloadData()
         }
     }
+    var productAt: ((Int) -> Product?)?
+    var onProductSelected: ((Int) -> Void)?
     
-    var onProductSelected: ((Product) -> Void)?
+    /// CollectionView'ı yenile - Dışarıdan erişim için
+    func reloadCollectionView() {
+        collectionView.reloadData()
+    }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -89,12 +95,16 @@ class ProductHorizontalSectionCell: UITableViewCell {
 extension ProductHorizontalSectionCell: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return products.count
+        return numberOfProducts?() ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ProductHorizontalCell", for: indexPath) as! ProductHorizontalCell
-        cell.configure(with: products[indexPath.item])
+        
+        if let product = productAt?(indexPath.item) {
+            cell.configure(with: product)
+        }
+        
         return cell
     }
     
@@ -103,7 +113,7 @@ extension ProductHorizontalSectionCell: UICollectionViewDataSource, UICollection
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        onProductSelected?(products[indexPath.item])
+        onProductSelected?(indexPath.item)
     }
 }
 

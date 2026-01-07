@@ -61,7 +61,9 @@ class AccountViewController: UIViewController, AccountViewProtocol {
     }
     
     private func setupUI() {
-        view.backgroundColor = .systemGroupedBackground
+        // Dark mode'u override et, her zaman beyaz olsun
+        view.backgroundColor = .white
+        overrideUserInterfaceStyle = .light
         
         // Navigation Bar
         title = "Hesabım"
@@ -94,9 +96,11 @@ class AccountViewController: UIViewController, AccountViewProtocol {
         // TableView
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.backgroundColor = .clear
+        tableView.backgroundColor = .systemGroupedBackground
         tableView.separatorStyle = .singleLine
         tableView.register(AccountMenuCell.self, forCellReuseIdentifier: "AccountMenuCell")
+        // Dark mode'u override et
+        tableView.overrideUserInterfaceStyle = .light
         contentView.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -158,26 +162,36 @@ class AccountViewController: UIViewController, AccountViewProtocol {
     
     // MARK: - AccountViewProtocol
     func reloadData() {
-        tableView.reloadData()
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+        }
     }
     
     func showError(_ message: String) {
-        let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-        present(alert, animated: true)
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+            self?.present(alert, animated: true)
+        }
     }
     
     func showLoading() {
-        loadingIndicator.startAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.startAnimating()
+        }
     }
     
     func hideLoading() {
-        loadingIndicator.stopAnimating()
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator.stopAnimating()
+        }
     }
     
     func updateUserInfo(name: String, email: String) {
-        nameLabel.text = name
-        emailLabel.text = email
+        DispatchQueue.main.async { [weak self] in
+            self?.nameLabel.text = name
+            self?.emailLabel.text = email
+        }
     }
 }
 
@@ -228,12 +242,16 @@ class AccountMenuCell: UITableViewCell {
     }
     
     private func setupUI() {
+        // Dark mode'u override et
+        overrideUserInterfaceStyle = .light
+        backgroundColor = .white
+        
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.tintColor = .systemOrange
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         
         titleLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = .label
+        titleLabel.textColor = .black // Dark mode'da da siyah olsun
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         contentView.addSubview(iconImageView)
