@@ -11,15 +11,15 @@ class CartInteractor: CartInteractorProtocol {
     
     weak var presenter: CartInteractorOutputProtocol?
     
-    // Dependency Injection - Protocol-based service
-    private let productService: ProductServiceProtocol
+    // Repository Pattern - Data layer abstraction
+    private let productRepository: ProductRepositoryProtocol
     
     // Task cancellation için - hafıza yönetimi
     private var fetchTask: Task<Void, Never>?
     
     // Initializer - Dependency Injection
-    init(productService: ProductServiceProtocol = NetworkManager.shared) {
-        self.productService = productService
+    init(productRepository: ProductRepositoryProtocol = ProductRepository()) {
+        self.productRepository = productRepository
     }
     
     func fetchCartItems() {
@@ -41,8 +41,8 @@ class CartInteractor: CartInteractorProtocol {
                     return
                 }
                 
-                // 2. Tüm ürünleri çek (verimlilik için - tek network isteği)
-                let allProducts = try await self.productService.fetchProducts()
+                // 2. Tüm ürünleri çek (Repository Pattern - önce cache'den kontrol eder)
+                let allProducts = try await self.productRepository.getProducts()
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled else { return }

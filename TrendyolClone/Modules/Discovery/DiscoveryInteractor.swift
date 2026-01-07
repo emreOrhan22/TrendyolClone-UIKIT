@@ -11,8 +11,10 @@ class DiscoveryInteractor: DiscoveryInteractorProtocol {
     
     weak var presenter: DiscoveryInteractorOutputProtocol?
     
-    // Dependency Injection - Protocol-based service
-    private let productService: ProductServiceProtocol
+    // Repository Pattern - Data layer abstraction
+    // Interactor artık direkt NetworkManager değil, Repository kullanıyor
+    // Bu sayede cache yönetimi, offline support, test edilebilirlik sağlanıyor
+    private let productRepository: ProductRepositoryProtocol
     
     // Task cancellation için - hafıza yönetimi
     private var fetchProductsTask: Task<Void, Never>?
@@ -20,8 +22,8 @@ class DiscoveryInteractor: DiscoveryInteractorProtocol {
     private var fetchByCategoryTask: Task<Void, Never>?
     
     // Initializer - Dependency Injection
-    init(productService: ProductServiceProtocol = NetworkManager.shared) {
-        self.productService = productService
+    init(productRepository: ProductRepositoryProtocol = ProductRepository()) {
+        self.productRepository = productRepository
     }
     
     func fetchProducts() {
@@ -31,8 +33,9 @@ class DiscoveryInteractor: DiscoveryInteractorProtocol {
         // Yeni async task başlat
         fetchProductsTask = Task { [weak self] in
             do {
-                // Async/await ile network isteği - Dependency Injection kullan
-                let products = try await self?.productService.fetchProducts() ?? []
+                // Repository Pattern kullanımı
+                // Repository önce cache'den kontrol eder, yoksa network'ten çeker
+                let products = try await self?.productRepository.getProducts() ?? []
                 
                 // Task iptal edildiyse devam etme
                 guard !Task.isCancelled, let self = self else { return }
@@ -55,7 +58,8 @@ class DiscoveryInteractor: DiscoveryInteractorProtocol {
         
         fetchCategoriesTask = Task { [weak self] in
             do {
-                let categories = try await self?.productService.fetchCategories() ?? []
+                // Repository Pattern kullanımı
+                let categories = try await self?.productRepository.getCategories() ?? []
                 
                 guard !Task.isCancelled, let self = self else { return }
                 
@@ -74,7 +78,8 @@ class DiscoveryInteractor: DiscoveryInteractorProtocol {
         
         fetchByCategoryTask = Task { [weak self] in
             do {
-                let products = try await self?.productService.fetchProductsByCategory(category: category) ?? []
+                // Repository Pattern kullanımı
+                let products = try await self?.productRepository.getProductsByCategory(category) ?? []
                 
                 guard !Task.isCancelled, let self = self else { return }
                 

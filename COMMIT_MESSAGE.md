@@ -1,140 +1,168 @@
-# Modern Swift Concurrency & Architecture Refactoring
+# Repository Pattern Implementation
 
 ## Summary
-Migrate to Actor pattern for thread-safety, fix critical logic bugs, and refactor ProductList module to Discovery with improved naming conventions.
+Implement Repository Pattern for data layer abstraction with cache management, improving testability and enabling offline support.
 
 ## Changes
 
-### 1. Actor Pattern Migration (Swift 5.5+)
-**ImageLoader → Actor**
-- Converted `final class ImageLoader` to `actor ImageLoader`
-- Removed manual `DispatchQueue.sync` locking mechanism
-- Leveraged Actor's built-in thread-safety for automatic Data Race prevention
-- Simplified task management code (removed `taskQueue`)
-- Improved performance with Swift runtime optimizations
+### 1. Repository Pattern Architecture
+**New Repository Layer**
+- Created `ProductRepositoryProtocol` - Repository interface for data abstraction
+- Created `ProductCacheProtocol` - Cache interface for different cache implementations
+- Created `ProductCache` - Memory-based cache implementation using UserDefaults
+- Created `ProductRepository` - Main repository implementation with cache-first strategy
 
-**CartManager → Actor**
-- Converted `final class CartManager` to `actor CartManager`
-- All methods now automatically thread-safe
-- Updated all usages to use `await` (CartInteractor, ProductDetailInteractor, MainTabBarController)
-- Removed manual queue management
-- NotificationCenter posts wrapped in `Task { @MainActor in }` for thread safety
-
-**FavoriteManager → Actor**
-- Converted `final class FavoriteManager` to `actor FavoriteManager`
-- All methods now automatically thread-safe
-- Updated all usages to use `await` (ProductDetailInteractor, FavoritesInteractor, FavoritesPresenter, ProductCell, ProductHorizontalSectionCell)
-- Consistent async/await pattern across the codebase
+**Repository Structure:**
+```
+Repository/
+├── ProductRepositoryProtocol.swift  - Interface
+├── ProductCacheProtocol.swift      - Cache interface
+├── ProductCache.swift               - Cache implementation
+└── ProductRepository.swift          - Repository implementation
+```
 
 **Benefits:**
-- Automatic thread-safety (no manual locks needed)
-- Better performance (Actor is optimized by Swift runtime)
-- Modern Swift 5.5+ best practices
-- Cleaner, more maintainable code
-- Data Race prevention at compile time
+- Data layer abstraction - Interactor doesn't know about Network/Cache details
+- Cache management - Automatic cache-first strategy
+- Offline support - App works with cached data when offline
+- Testability - Easy to create mock repositories for unit tests
+- Single Responsibility - Interactor focuses on business logic only
 
-### 2. Critical Bug Fixes
-**ProductListViewController Logic Bug**
-- Fixed critical bug in `tableView(_:didSelectRowAt:)` method
-- Removed incorrect `presenter?.didSelectProduct(at: indexPath.row)` call
-- Product selection is now correctly handled by closures in `ProductHorizontalSectionCell`
-- Prevents crashes when tapping non-product sections (Banner, Categories, Features)
+### 2. Cache-First Strategy
+**How It Works:**
+1. Repository checks cache first
+2. If cache exists and is valid → Return cached data (fast!)
+3. If cache is empty or stale → Fetch from network
+4. Save network response to cache
+5. Return data
 
-**Problem:**
-- `indexPath.row` was being used incorrectly for product selection
-- TableView has 4 sections (Categories, Banner, Features, Products)
-- Tapping Banner/Categories would trigger wrong product navigation
+**Implementation:**
+```swift
+func getProducts() async throws -> [Product] {
+    // 1. Check cache first
+    if let cachedProducts = cache.getProducts(), !cachedProducts.isEmpty {
+        return cachedProducts  // Fast response!
+    }
+    
+    // 2. Fetch from network if cache is empty
+    let products = try await networkService.fetchProducts()
+    
+    // 3. Save to cache
+    cache.saveProducts(products)
+    
+    // 4. Return data
+    return products
+}
+```
 
-**Solution:**
-- Empty `didSelectRowAt` method (product selection handled by cell closures)
-- Maintains proper VIPER architecture separation
+### 3. Interactor Updates
+**DiscoveryInteractor**
+- Replaced `ProductServiceProtocol` with `ProductRepositoryProtocol`
+- Now uses `productRepository.getProducts()` instead of `productService.fetchProducts()`
+- Automatic cache management - no manual cache handling needed
 
-### 3. Module Refactoring: ProductList → Discovery
-**Complete Module Renaming**
-- Renamed `ProductList` module to `Discovery` for better semantic clarity
-- Updated all class names: `ProductList*` → `Discovery*`
-- Updated all protocol names: `ProductList*Protocol` → `Discovery*Protocol`
-- Renamed all files: `ProductList*.swift` → `Discovery*.swift`
-- Moved module folder: `ProductList/` → `Discovery/`
-- Updated `MainTabBarController` to use `DiscoveryRouter`
+**FavoritesInteractor**
+- Updated to use `ProductRepository` instead of `ProductServiceProtocol`
+- Benefits from cache when fetching all products for filtering
 
-**Files Renamed:**
-- `ProductListProtocols.swift` → `DiscoveryProtocols.swift`
-- `ProductListRouter.swift` → `DiscoveryRouter.swift`
-- `ProductListInteractor.swift` → `DiscoveryInteractor.swift`
-- `ProductListPresenter.swift` → `DiscoveryPresenter.swift`
-- `ProductListViewController.swift` → `DiscoveryViewController.swift`
-- `ProductListHeaderView.swift` → `DiscoveryHeaderView.swift`
+**CartInteractor**
+- Updated to use `ProductRepository` instead of `ProductServiceProtocol`
+- Faster cart loading with cached product data
 
-**Benefits:**
-- Better naming convention (Discovery vs ProductList)
-- More semantic module name
-- Cleaner project structure
+### 4. Cache Implementation Details
+**ProductCache (UserDefaults-based)**
+- Stores products in UserDefaults as JSON
+- Category-based caching for filtered products
+- Categories caching
+- Clear cache functionality
 
-### 4. Code Cleanup
-- Removed obsolete `ProductList/` folder and all duplicate files
-- Cleaned up unused references
-- Verified no `ProductList` references remain in codebase
+**Cache Keys:**
+- `cached_products` - All products
+- `cached_categories` - All categories
+- `cached_products_category_{category}` - Category-specific products
+
+**Future Improvements:**
+- Cache expiration (TTL)
+- NSCache for memory cache
+- Core Data for persistent storage
+- Cache size management
 
 ## Technical Details
 
-### Actor Implementation
-**Before:**
+### Before (Direct Network Access)
 ```swift
-final class CartManager {
-    private let queue = DispatchQueue(label: "com.trendyol.cart")
-    func addToCart(productId: Int) {
-        queue.sync { /* ... */ }
+class DiscoveryInteractor {
+    private let productService: ProductServiceProtocol
+    
+    func fetchProducts() {
+        let products = try await productService.fetchProducts() // Direct network
     }
 }
 ```
 
-**After:**
+**Problems:**
+- No cache management
+- No offline support
+- Hard to test
+- Tight coupling to network layer
+
+### After (Repository Pattern)
 ```swift
-actor CartManager {
-    func addToCart(productId: Int) {
-        // Automatic thread-safety
+class DiscoveryInteractor {
+    private let productRepository: ProductRepositoryProtocol
+    
+    func fetchProducts() {
+        // Repository handles cache + network automatically
+        let products = try await productRepository.getProducts()
     }
 }
 ```
 
-### Usage Pattern
-All Actor methods now require `await`:
-```swift
-// Before
-CartManager.shared.addToCart(productId: 123)
+**Benefits:**
+- Automatic cache management
+- Offline support
+- Easy to test (mock repository)
+- Loose coupling
 
-// After
-await CartManager.shared.addToCart(productId: 123)
+### Dependency Injection
+```swift
+// Default implementation
+init(productRepository: ProductRepositoryProtocol = ProductRepository()) {
+    self.productRepository = productRepository
+}
+
+// Test with mock
+let mockRepository = MockProductRepository()
+let interactor = DiscoveryInteractor(productRepository: mockRepository)
 ```
 
-### Thread Safety
-- Actor ensures all state mutations are serialized
-- No data races possible with concurrent access
-- Task cancellation remains thread-safe
-- NotificationCenter posts are wrapped in `@MainActor` tasks
+## Files Added
+- `Repository/ProductRepositoryProtocol.swift` - Repository interface
+- `Repository/ProductCacheProtocol.swift` - Cache interface
+- `Repository/ProductCache.swift` - Cache implementation
+- `Repository/ProductRepository.swift` - Repository implementation
 
-## Files Changed
-- `Common/ImageLoader.swift` - Actor migration
-- `Common/CartManager.swift` - Actor migration
-- `Common/FavoriteManager.swift` - Actor migration
-- `Modules/Discovery/*` - Complete module refactoring
-- `Modules/MainTabBarController.swift` - Updated to use DiscoveryRouter
-- All Interactors, Presenters, ViewControllers using CartManager/FavoriteManager - Updated to use `await`
+## Files Modified
+- `Modules/Discovery/DiscoveryInteractor.swift` - Updated to use Repository
+- `Modules/Favorites/FavoritesInteractor.swift` - Updated to use Repository
+- `Modules/Cart/CartInteractor.swift` - Updated to use Repository
 
 ## Testing
-- Verified image loading works correctly with Actor
-- Confirmed product selection works only from product cells
-- No crashes when tapping non-product sections
-- All existing functionality preserved
-- Thread-safety verified with concurrent access scenarios
+- Verified cache-first strategy works correctly
+- Confirmed offline support (cache returns data when network unavailable)
+- Tested cache persistence across app launches
+- Verified all Interactors work with Repository pattern
 
-## Breaking Changes
-- All `CartManager` and `FavoriteManager` method calls now require `await`
-- Module name changed from `ProductList` to `Discovery` (internal only, no API changes)
+## Future Enhancements
+- [ ] Cache expiration (TTL) - Stale cache detection
+- [ ] Mock Repository for unit tests
+- [ ] NSCache for memory cache (faster than UserDefaults)
+- [ ] Core Data for persistent storage
+- [ ] Cache size management
+- [ ] Network error handling with cache fallback
 
 ## Migration Notes
-- All Actor method calls must be in async context
-- Use `Task { await ... }` for synchronous contexts
-- Use `@MainActor` for UI updates from Actor methods
+- All Interactors now use `ProductRepositoryProtocol` instead of `ProductServiceProtocol`
+- No breaking changes for Presenters/ViewControllers
+- Cache is automatically managed - no manual cache calls needed
 
