@@ -7,6 +7,12 @@
 
 import Foundation
 
+// MARK: - Notification Names Extension
+extension Notification.Name {
+    /// Sepet güncellendiğinde gönderilen bildirim
+    static let cartDidUpdate = Notification.Name("CartDidUpdate")
+}
+
 /// Sepet öğesi - Ürün ve miktar bilgisi
 struct CartItem: Codable {
     let productId: Int
@@ -136,7 +142,7 @@ actor CartManager {
         userDefaults.removeObject(forKey: cartKey)
         // Sepet temizlendiğinde bildirim gönder (main thread'de)
         Task { @MainActor in
-            NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+            NotificationCenter.default.post(name: .cartDidUpdate, object: nil)
         }
     }
     
@@ -149,7 +155,7 @@ actor CartManager {
             userDefaults.set(data, forKey: cartKey)
             // Sepet değiştiğinde bildirim gönder (main thread'de)
             Task { @MainActor in
-                NotificationCenter.default.post(name: NSNotification.Name("CartDidUpdate"), object: nil)
+                NotificationCenter.default.post(name: .cartDidUpdate, object: nil)
             }
         }
     }

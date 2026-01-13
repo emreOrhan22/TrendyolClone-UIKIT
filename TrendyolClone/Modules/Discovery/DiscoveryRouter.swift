@@ -11,10 +11,12 @@ class DiscoveryRouter: DiscoveryRouterProtocol {
     
     weak var viewController: UIViewController?
     
-    static func createModule() -> UIViewController {
+    static func createModule(
+        repository: ProductRepositoryProtocol = ProductRepository()
+    ) -> UIViewController {
         let view = DiscoveryViewController()
         let presenter = DiscoveryPresenter()
-        let interactor = DiscoveryInteractor()
+        let interactor = DiscoveryInteractor(productRepository: repository)
         let router = DiscoveryRouter()
         
         // Katmanları birbirine "enjekte" ediyoruz (Dependency Injection)

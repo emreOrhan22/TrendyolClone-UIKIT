@@ -7,6 +7,18 @@
 
 import Foundation
 
+/// Cache wrapper - TTL (Time To Live) desteği için
+private struct CachedData<T: Codable>: Codable {
+    let data: T
+    let timestamp: Date
+    
+    var isExpired: Bool {
+        // 1 saat (3600 saniye) sonra expire et
+        let expirationTime: TimeInterval = 3600
+        return Date().timeIntervalSince(timestamp) > expirationTime
+    }
+}
+
 /// Memory-based cache implementasyonu
 /// UserDefaults kullanarak basit bir cache mekanizması
 /// 
@@ -27,43 +39,73 @@ class ProductCache: ProductCacheProtocol {
     // MARK: - Products
     
     func saveProducts(_ products: [Product]) {
-        if let encoded = try? JSONEncoder().encode(products) {
+        let cachedData = CachedData(data: products, timestamp: Date())
+        if let encoded = try? JSONEncoder().encode(cachedData) {
             userDefaults.set(encoded, forKey: CacheKey.products)
         }
     }
     
     func getProducts() -> [Product]? {
         guard let data = userDefaults.data(forKey: CacheKey.products),
-              let products = try? JSONDecoder().decode([Product].self, from: data) else {
+              let cachedData = try? JSONDecoder().decode(CachedData<[Product]>.self, from: data) else {
             return nil
         }
-        return products
+        
+        // TTL kontrolü - Expire olmuşsa nil döndür
+        if cachedData.isExpired {
+            userDefaults.removeObject(forKey: CacheKey.products)
+            return nil
+        }
+        
+        return cachedData.data
     }
     
     // MARK: - Products by Category
     
     func saveProducts(_ products: [Product], for category: String) {
-        if let encoded = try? JSONEncoder().encode(products) {
+        let cachedData = CachedData(data: products, timestamp: Date())
+        if let encoded = try? JSONEncoder().encode(cachedData) {
             userDefaults.set(encoded, forKey: CacheKey.productsForCategory(category))
         }
     }
     
     func getProducts(for category: String) -> [Product]? {
         guard let data = userDefaults.data(forKey: CacheKey.productsForCategory(category)),
-              let products = try? JSONDecoder().decode([Product].self, from: data) else {
+              let cachedData = try? JSONDecoder().decode(CachedData<[Product]>.self, from: data) else {
             return nil
         }
-        return products
+        
+        // TTL kontrolü - Expire olmuşsa nil döndür
+        if cachedData.isExpired {
+            userDefaults.removeObject(forKey: CacheKey.productsForCategory(category))
+            return nil
+        }
+        
+        return cachedData.data
     }
     
     // MARK: - Categories
     
     func saveCategories(_ categories: [String]) {
-        userDefaults.set(categories, forKey: CacheKey.categories)
+        let cachedData = CachedData(data: categories, timestamp: Date())
+        if let encoded = try? JSONEncoder().encode(cachedData) {
+            userDefaults.set(encoded, forKey: CacheKey.categories)
+        }
     }
     
     func getCategories() -> [String]? {
-        return userDefaults.array(forKey: CacheKey.categories) as? [String]
+        guard let data = userDefaults.data(forKey: CacheKey.categories),
+              let cachedData = try? JSONDecoder().decode(CachedData<[String]>.self, from: data) else {
+            return nil
+        }
+        
+        // TTL kontrolü - Expire olmuşsa nil döndür
+        if cachedData.isExpired {
+            userDefaults.removeObject(forKey: CacheKey.categories)
+            return nil
+        }
+        
+        return cachedData.data
     }
     
     // MARK: - Clear

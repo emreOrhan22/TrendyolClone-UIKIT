@@ -11,10 +11,12 @@ class FavoritesRouter: FavoritesRouterProtocol {
     
     weak var viewController: UIViewController?
     
-    static func createModule() -> UIViewController {
+    static func createModule(
+        repository: ProductRepositoryProtocol = ProductRepository()
+    ) -> UIViewController {
         let view = FavoritesViewController()
         let presenter = FavoritesPresenter()
-        let interactor = FavoritesInteractor()
+        let interactor = FavoritesInteractor(productRepository: repository)
         let router = FavoritesRouter()
         
         // Katmanları birbirine "enjekte" ediyoruz (Dependency Injection)

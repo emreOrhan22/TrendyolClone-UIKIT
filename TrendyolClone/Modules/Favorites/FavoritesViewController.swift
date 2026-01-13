@@ -63,6 +63,15 @@ class FavoritesViewController: UIViewController, FavoritesViewProtocol {
         presenter?.viewWillAppear()
     }
     
+    // MARK: - Memory Management
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Memory warning geldiğinde image cache'ini temizle
+        Task {
+            await ImageLoader.shared.cancelAllTasks()
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .white
         title = "Favorilerim"

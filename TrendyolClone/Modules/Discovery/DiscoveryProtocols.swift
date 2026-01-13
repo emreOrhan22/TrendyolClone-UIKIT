@@ -11,6 +11,8 @@ import UIKit
 protocol DiscoveryViewProtocol: AnyObject {
     func reloadData()
     func showError(_ message: String)
+    func showErrorWithRetry(_ message: String, retryAction: @escaping () -> Void)
+    func hideError()
     func showLoading()
     func hideLoading()
 }
@@ -47,7 +49,14 @@ protocol DiscoveryInteractorOutputProtocol: AnyObject {
 
 // 5. Router Sözleşmesi (Modül nasıl kurulacak?)
 protocol DiscoveryRouterProtocol: AnyObject {
-    static func createModule() -> UIViewController
+    static func createModule(repository: ProductRepositoryProtocol) -> UIViewController
     var viewController: UIViewController? { get set }
     func navigateToProductDetail(product: Product)
+}
+
+// Protocol Extension - Default değer için
+extension DiscoveryRouterProtocol {
+    static func createModule() -> UIViewController {
+        return createModule(repository: ProductRepository())
+    }
 }

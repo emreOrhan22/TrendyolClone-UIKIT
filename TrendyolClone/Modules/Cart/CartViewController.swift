@@ -104,6 +104,15 @@ class CartViewController: UIViewController, CartViewProtocol {
         presenter?.viewWillAppear()
     }
     
+    // MARK: - Memory Management
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Memory warning geldiğinde image cache'ini temizle
+        Task {
+            await ImageLoader.shared.cancelAllTasks()
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .white
         title = "Sepetim"

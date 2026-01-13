@@ -89,7 +89,7 @@ extension DiscoveryPresenter: DiscoveryInteractorOutputProtocol {
     
     func didFetchProducts(_ products: [Product]) {
         // Eğer kategori seçiliyse, sadece o kategorinin ürünlerini göster
-        if let category = selectedCategory {
+        if selectedCategory != nil {
             // Kategori seçiliyse, gelen ürünler zaten o kategoriye ait (API'den filtrelenmiş)
             filteredProducts = products
             isSearching = true
@@ -111,9 +111,19 @@ extension DiscoveryPresenter: DiscoveryInteractorOutputProtocol {
     }
     
     func didFailWithError(_ error: Error) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             self.view?.hideLoading()
-            self.view?.showError(error.localizedDescription)
+            // Error Recovery UI ile retry imkanı sun
+            self.view?.showErrorWithRetry(error.localizedDescription) { [weak self] in
+                // Retry action - Verileri tekrar çek
+                self?.view?.showLoading()
+                if let category = self?.selectedCategory {
+                    self?.interactor?.fetchProductsByCategory(category: category)
+                } else {
+                    self?.interactor?.fetchProducts()
+                }
+            }
         }
     }
 }

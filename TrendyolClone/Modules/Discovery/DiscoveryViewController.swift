@@ -14,11 +14,21 @@ class DiscoveryViewController: UIViewController, DiscoveryViewProtocol {
     private let tableView = UITableView()
     private let searchController = UISearchController(searchResultsController: nil)
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
+    private let errorView = ErrorView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         presenter?.viewDidLoad()
+    }
+    
+    // MARK: - Memory Management
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Memory warning geldiğinde image cache'ini temizle
+        Task {
+            await ImageLoader.shared.cancelAllTasks()
+        }
     }
 
     private func setupUI() {
@@ -41,6 +51,9 @@ class DiscoveryViewController: UIViewController, DiscoveryViewProtocol {
         
         // Loading Indicator
         setupLoadingIndicator()
+        
+        // Error View
+        setupErrorView()
         
         // TableView
         view.addSubview(tableView)
@@ -88,12 +101,25 @@ class DiscoveryViewController: UIViewController, DiscoveryViewProtocol {
         ])
     }
     
+    private func setupErrorView() {
+        view.addSubview(errorView)
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        errorView.isHidden = true
+        NSLayoutConstraint.activate([
+            errorView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+    
     @objc private func refreshProducts() {
         presenter?.viewDidLoad()
     }
 
     func reloadData() {
         DispatchQueue.main.async { [weak self] in
+            self?.hideError()  // Veri geldiğinde error view'ı gizle
             self?.tableView.reloadData()
             self?.tableView.refreshControl?.endRefreshing()
         }
@@ -104,6 +130,26 @@ class DiscoveryViewController: UIViewController, DiscoveryViewProtocol {
             let alert = UIAlertController(title: "Hata", message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Tamam", style: .default))
             self?.present(alert, animated: true)
+        }
+    }
+    
+    func showErrorWithRetry(_ message: String, retryAction: @escaping () -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.errorView.updateMessage(message)
+            self.errorView.onRetry = {
+                self.hideError()
+                retryAction()
+            }
+            self.errorView.isHidden = false
+            self.tableView.isHidden = true
+        }
+    }
+    
+    func hideError() {
+        DispatchQueue.main.async { [weak self] in
+            self?.errorView.isHidden = true
+            self?.tableView.isHidden = false
         }
     }
     

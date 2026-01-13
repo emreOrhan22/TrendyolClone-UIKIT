@@ -212,10 +212,24 @@ class ProductHorizontalCell: UICollectionViewCell {
         priceLabel.text = String(format: "%.2f TL", product.price)
         
         // Async/await ile görsel yükleme
+        // Placeholder göster (resim yüklenirken boş görünmesin)
+        productImageView.image = UIImage(systemName: "photo")
+        productImageView.contentMode = .center
+        productImageView.tintColor = .systemGray3
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let image = await ImageLoader.shared.loadImage(from: product.image)
-            self.productImageView.image = image
+            // Resim yüklendiğinde veya hata durumunda
+            if let loadedImage = image {
+                self.productImageView.image = loadedImage
+                self.productImageView.contentMode = .scaleAspectFill
+            } else {
+                // Hata durumunda fallback placeholder
+                self.productImageView.image = UIImage(systemName: "photo.artframe")
+                self.productImageView.contentMode = .center
+                self.productImageView.tintColor = .systemGray3
+            }
         }
         
         // Favori durumunu güncelle (Actor'a await ile erişim)

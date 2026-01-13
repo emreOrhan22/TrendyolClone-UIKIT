@@ -60,6 +60,15 @@ class AccountViewController: UIViewController, AccountViewProtocol {
         presenter?.viewDidLoad()
     }
     
+    // MARK: - Memory Management
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Memory warning geldiğinde image cache'ini temizle
+        Task {
+            await ImageLoader.shared.cancelAllTasks()
+        }
+    }
+    
     private func setupUI() {
         // Dark mode'u override et, her zaman beyaz olsun
         view.backgroundColor = .white

@@ -69,8 +69,15 @@ protocol CartInteractorOutputProtocol: AnyObject {
 // MARK: - Router Protocol
 /// Router katmanı sözleşmesi - Modül nasıl kurulacak?
 protocol CartRouterProtocol: AnyObject {
-    static func createModule() -> UIViewController
+    static func createModule(repository: ProductRepositoryProtocol) -> UIViewController
     var viewController: UIViewController? { get set }
     func navigateToProductDetail(product: Product)
+}
+
+// Protocol Extension - Default değer için
+extension CartRouterProtocol {
+    static func createModule() -> UIViewController {
+        return createModule(repository: ProductRepository())
+    }
 }
 

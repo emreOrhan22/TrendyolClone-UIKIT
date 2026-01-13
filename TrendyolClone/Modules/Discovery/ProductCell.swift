@@ -163,12 +163,35 @@ class ProductCell: UITableViewCell {
         titleLabel.text = product.title
         priceLabel.text = String(format: "%.2f TL", product.price)
         
+        // Accessibility (VoiceOver) desteği
+        isAccessibilityElement = true
+        accessibilityLabel = "\(product.title), Fiyat: \(String(format: "%.2f TL", product.price))"
+        accessibilityHint = "Çift dokunarak ürün detaylarını görüntüleyebilirsiniz"
+        
+        favoriteButton.accessibilityLabel = "Favorilere ekle"
+        favoriteButton.accessibilityHint = "Çift dokunarak ürünü favorilere ekleyebilir veya çıkarabilirsiniz"
+        
+        productImageView.isAccessibilityElement = false  // Decorative image
+        
         // Görseli yükle - Async/await ile
-        productImageView.image = nil
+        // Placeholder göster (resim yüklenirken boş görünmesin)
+        productImageView.image = UIImage(systemName: "photo")
+        productImageView.contentMode = .center
+        productImageView.tintColor = .systemGray3
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let image = await ImageLoader.shared.loadImage(from: product.image)
-            self.productImageView.image = image
+            // Resim yüklendiğinde veya hata durumunda
+            if let loadedImage = image {
+                self.productImageView.image = loadedImage
+                self.productImageView.contentMode = .scaleAspectFill
+            } else {
+                // Hata durumunda fallback placeholder
+                self.productImageView.image = UIImage(systemName: "photo.artframe")
+                self.productImageView.contentMode = .center
+                self.productImageView.tintColor = .systemGray3
+            }
         }
         
         // Rating göster
@@ -184,6 +207,9 @@ class ProductCell: UITableViewCell {
             guard let self = self else { return }
             let isFavorite = await FavoriteManager.shared.isFavorite(productId: product.id)
             self.updateFavoriteButton(isFavorite: isFavorite)
+            
+            // Accessibility güncelle
+            self.favoriteButton.accessibilityLabel = isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"
         }
         
         // Badge'i göster/gizle (şimdilik her zaman göster)

@@ -153,12 +153,41 @@ class CartCell: UITableViewCell {
         priceLabel.text = String(format: "%.2f TL", item.totalPrice)
         quantityLabel.text = "\(item.quantity)"
         
+        // Accessibility (VoiceOver) desteği
+        isAccessibilityElement = true
+        accessibilityLabel = "\(item.product.title), Fiyat: \(String(format: "%.2f TL", item.totalPrice)), Miktar: \(item.quantity)"
+        accessibilityHint = "Ürün miktarını artırmak veya azaltmak için butonları kullanabilirsiniz"
+        
+        increaseButton.accessibilityLabel = "Miktarı artır"
+        increaseButton.accessibilityHint = "Çift dokunarak ürün miktarını bir artırabilirsiniz"
+        
+        decreaseButton.accessibilityLabel = "Miktarı azalt"
+        decreaseButton.accessibilityHint = "Çift dokunarak ürün miktarını bir azaltabilirsiniz"
+        
+        removeButton.accessibilityLabel = "Ürünü sepetten çıkar"
+        removeButton.accessibilityHint = "Çift dokunarak ürünü sepetten çıkarabilirsiniz"
+        
+        productImageView.isAccessibilityElement = false  // Decorative image
+        
         // Görseli yükle - Async/await ile
-        productImageView.image = nil
+        // Placeholder göster (resim yüklenirken boş görünmesin)
+        productImageView.image = UIImage(systemName: "photo")
+        productImageView.contentMode = .center
+        productImageView.tintColor = .systemGray3
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let image = await ImageLoader.shared.loadImage(from: item.product.image)
-            self.productImageView.image = image
+            // Resim yüklendiğinde veya hata durumunda
+            if let loadedImage = image {
+                self.productImageView.image = loadedImage
+                self.productImageView.contentMode = .scaleAspectFill
+            } else {
+                // Hata durumunda fallback placeholder
+                self.productImageView.image = UIImage(systemName: "photo.artframe")
+                self.productImageView.contentMode = .center
+                self.productImageView.tintColor = .systemGray3
+            }
         }
     }
     

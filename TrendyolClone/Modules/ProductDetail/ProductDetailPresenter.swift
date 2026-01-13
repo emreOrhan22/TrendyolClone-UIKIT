@@ -52,8 +52,13 @@ extension ProductDetailPresenter: ProductDetailInteractorOutputProtocol {
     }
     
     func didAddToCart() {
-        // Sepete eklendi - View'a bildir (toast mesajı gösterebilir)
-        // Şimdilik sadece başarılı olduğunu biliyoruz
+        // Sepete eklendi - View'a bildir
+        view?.showSuccess("Ürün sepete eklendi!")
+    }
+    
+    func didFailToAddToCart(message: String) {
+        // Sepete ekleme başarısız (offline durumu)
+        view?.showError(message)
     }
 }
 

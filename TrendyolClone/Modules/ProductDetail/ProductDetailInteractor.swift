@@ -31,9 +31,22 @@ class ProductDetailInteractor: ProductDetailInteractorProtocol {
     }
     
     /// Sepete ürün ekle
+    /// Offline durumda ekleme yapılmaz - Stok kontrolü ve güncel veri için internet gerekli
     func addToCart(productId: Int) {
-        // Actor'a await ile erişim
         Task { @MainActor [weak self] in
+            // 1. Önce network durumunu kontrol et
+            let isOnline = await NetworkMonitor.shared.checkConnection()
+            
+            guard isOnline else {
+                // Offline durumda sepete ekleme yapma
+                // Kullanıcıya bilgi ver
+                self?.presenter?.didFailToAddToCart(
+                    message: "İnternet bağlantınız yok. Sepete eklemek için lütfen internet bağlantınızı kontrol edin."
+                )
+                return
+            }
+            
+            // 2. Online ise sepete ekle
             await CartManager.shared.addToCart(productId: productId)
             self?.presenter?.didAddToCart()
         }

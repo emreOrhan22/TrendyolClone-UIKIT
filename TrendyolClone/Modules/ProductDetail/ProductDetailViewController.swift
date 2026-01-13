@@ -27,6 +27,15 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         presenter?.viewDidLoad()
     }
     
+    // MARK: - Memory Management
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Memory warning geldiğinde image cache'ini temizle
+        Task {
+            await ImageLoader.shared.cancelAllTasks()
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .white
         
@@ -43,6 +52,8 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         // Favorite Button
         favoriteButton.setImage(UIImage(systemName: "heart"), for: .normal)
         favoriteButton.tintColor = .systemOrange
+        favoriteButton.accessibilityLabel = "Favorilere ekle"
+        favoriteButton.accessibilityHint = "Çift dokunarak ürünü favorilere ekleyebilir veya çıkarabilirsiniz"
         favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: favoriteButton)
         
@@ -92,6 +103,8 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         addToCartButton.setTitleColor(.white, for: .normal)
         addToCartButton.backgroundColor = .systemOrange
         addToCartButton.layer.cornerRadius = 12
+        addToCartButton.accessibilityLabel = "Sepete ekle"
+        addToCartButton.accessibilityHint = "Çift dokunarak ürünü sepete ekleyebilirsiniz"
         addToCartButton.addTarget(self, action: #selector(addToCartButtonTapped), for: .touchUpInside)
         contentView.addSubview(addToCartButton)
         addToCartButton.translatesAutoresizingMaskIntoConstraints = false
@@ -150,11 +163,9 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
     }
     
     @objc private func addToCartButtonTapped() {
+        // Sepete ekleme işlemi Presenter üzerinden yapılıyor
+        // Network kontrolü Interactor'da yapılıyor
         presenter?.addToCart()
-        // Başarı mesajı göster
-        let alert = UIAlertController(title: "Başarılı", message: "Ürün sepete eklendi!", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-        present(alert, animated: true)
     }
     
     // MARK: - ProductDetailViewProtocol
@@ -168,10 +179,24 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         }
         
         // Async/await ile görsel yükleme - Modern Swift yaklaşımı
+        // Placeholder göster (resim yüklenirken boş görünmesin)
+        productImageView.image = UIImage(systemName: "photo")
+        productImageView.contentMode = .center
+        productImageView.tintColor = .systemGray3
+        
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             let image = await ImageLoader.shared.loadImage(from: product.image)
-            self.productImageView.image = image
+            // Resim yüklendiğinde veya hata durumunda
+            if let loadedImage = image {
+                self.productImageView.image = loadedImage
+                self.productImageView.contentMode = .scaleAspectFill
+            } else {
+                // Hata durumunda fallback placeholder
+                self.productImageView.image = UIImage(systemName: "photo.artframe")
+                self.productImageView.contentMode = .center
+                self.productImageView.tintColor = .systemGray3
+            }
         }
     }
     
@@ -183,10 +208,20 @@ class ProductDetailViewController: UIViewController, ProductDetailViewProtocol {
         }
     }
     
+    func showSuccess(_ message: String) {
+        DispatchQueue.main.async { [weak self] in
+            let alert = UIAlertController(title: "Başarılı", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+            self?.present(alert, animated: true)
+        }
+    }
+    
     func updateFavoriteButton(isFavorite: Bool) {
         DispatchQueue.main.async { [weak self] in
             let imageName = isFavorite ? "heart.fill" : "heart"
             self?.favoriteButton.setImage(UIImage(systemName: imageName), for: .normal)
+            // Accessibility güncelle
+            self?.favoriteButton.accessibilityLabel = isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"
         }
     }
 }

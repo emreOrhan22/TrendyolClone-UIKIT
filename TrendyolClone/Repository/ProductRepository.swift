@@ -36,20 +36,32 @@ class ProductRepository: ProductRepositoryProtocol {
     
     func getProducts() async throws -> [Product] {
         // 1. Önce cache'den kontrol et
+        // NOT: ProductCache.getProducts() zaten TTL kontrolü yapıyor (isExpired)
+        // Expire olmuş cache otomatik olarak nil döndürülüyor ve temizleniyor
         if let cachedProducts = cache.getProducts(), !cachedProducts.isEmpty {
-            // Cache'den döndür (hızlı)
-            // NOT: Production'da cache freshness kontrolü eklenebilir
+            // Cache'den döndür (hızlı ve fresh)
             return cachedProducts
         }
         
         // 2. Cache yoksa network'ten çek
-        let products = try await networkService.fetchProducts()
-        
-        // 3. Network'ten gelen veriyi cache'e kaydet
-        cache.saveProducts(products)
-        
-        // 4. Veriyi döndür
-        return products
+        do {
+            let products = try await networkService.fetchProducts()
+            
+            // 3. Network'ten gelen veriyi cache'e kaydet
+            cache.saveProducts(products)
+            
+            // 4. Veriyi döndür
+            return products
+        } catch {
+            // Network hatası olduğunda cache'den tekrar kontrol et
+            // (Offline support - internet gittiğinde cache'den oku)
+            if let cachedProducts = cache.getProducts(), !cachedProducts.isEmpty {
+                // Cache'den döndür (offline mode)
+                return cachedProducts
+            }
+            // Cache de yoksa hatayı fırlat
+            throw error
+        }
     }
     
     func getCachedProducts() -> [Product]? {
@@ -65,13 +77,22 @@ class ProductRepository: ProductRepositoryProtocol {
         }
         
         // 2. Cache yoksa network'ten çek
-        let products = try await networkService.fetchProductsByCategory(category: category)
-        
-        // 3. Network'ten gelen veriyi cache'e kaydet
-        cache.saveProducts(products, for: category)
-        
-        // 4. Veriyi döndür
-        return products
+        do {
+            let products = try await networkService.fetchProductsByCategory(category: category)
+            
+            // 3. Network'ten gelen veriyi cache'e kaydet
+            cache.saveProducts(products, for: category)
+            
+            // 4. Veriyi döndür
+            return products
+        } catch {
+            // Network hatası olduğunda cache'den tekrar kontrol et
+            if let cachedProducts = cache.getProducts(for: category), !cachedProducts.isEmpty {
+                return cachedProducts
+            }
+            // Cache de yoksa hatayı fırlat
+            throw error
+        }
     }
     
     // MARK: - Get Single Product
@@ -91,13 +112,22 @@ class ProductRepository: ProductRepositoryProtocol {
         }
         
         // 2. Cache yoksa network'ten çek
-        let categories = try await networkService.fetchCategories()
-        
-        // 3. Network'ten gelen veriyi cache'e kaydet
-        cache.saveCategories(categories)
-        
-        // 4. Veriyi döndür
-        return categories
+        do {
+            let categories = try await networkService.fetchCategories()
+            
+            // 3. Network'ten gelen veriyi cache'e kaydet
+            cache.saveCategories(categories)
+            
+            // 4. Veriyi döndür
+            return categories
+        } catch {
+            // Network hatası olduğunda cache'den tekrar kontrol et
+            if let cachedCategories = cache.getCategories(), !cachedCategories.isEmpty {
+                return cachedCategories
+            }
+            // Cache de yoksa hatayı fırlat
+            throw error
+        }
     }
     
     // MARK: - Clear Cache

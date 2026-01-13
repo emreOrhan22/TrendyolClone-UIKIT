@@ -20,7 +20,7 @@ class MainTabBarController: UITabBarController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateCartBadge),
-            name: NSNotification.Name("CartDidUpdate"),
+            name: .cartDidUpdate,
             object: nil
         )
     }

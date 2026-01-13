@@ -10,6 +10,7 @@ import UIKit
 protocol ProductDetailViewProtocol: AnyObject {
     func showProduct(_ product: Product)
     func showError(_ message: String)
+    func showSuccess(_ message: String) // Başarı mesajları için
     func updateFavoriteButton(isFavorite: Bool)
 }
 
@@ -38,6 +39,7 @@ protocol ProductDetailInteractorOutputProtocol: AnyObject {
     func didCheckFavoriteStatus(isFavorite: Bool)
     func didToggleFavorite(isFavorite: Bool)
     func didAddToCart()
+    func didFailToAddToCart(message: String) // Offline durumu için
 }
 
 protocol ProductDetailRouterProtocol: AnyObject {

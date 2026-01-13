@@ -15,6 +15,10 @@ actor ImageLoader {
     
     private let cache = NSCache<NSString, UIImage>()
     
+    // URLSession configuration - Timeout ve diğer ayarlar
+    // Actor içinde lazy var kullanılamaz, init'te oluşturuyoruz
+    private let urlSession: URLSession
+    
     // Task cancellation için - hafıza yönetimi için önemli
     // Actor içinde olduğu için thread-safe (DispatchQueue'a gerek yok)
     private var runningTasks: [String: Task<UIImage?, Never>] = [:]
@@ -22,6 +26,13 @@ actor ImageLoader {
     private init() {
         cache.countLimit = 100
         cache.totalCostLimit = 50 * 1024 * 1024 // 50 MB
+        
+        // URLSession configuration - Timeout ve diğer ayarlar
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30.0  // 30 saniye timeout
+        configuration.timeoutIntervalForResource = 60.0  // 60 saniye resource timeout
+        configuration.waitsForConnectivity = true  // Bağlantı beklesin
+        self.urlSession = URLSession(configuration: configuration)
     }
     
     /// Async/await ile görsel yükleme - Modern Swift yaklaşımı
@@ -44,8 +55,8 @@ actor ImageLoader {
         // Yeni task oluştur
         let task = Task<UIImage?, Never> {
             do {
-                // Async/await ile network isteği - closure yerine
-                let (data, _) = try await URLSession.shared.data(from: url)
+                // Async/await ile network isteği - Custom URLSession ile timeout'lu
+                let (data, _) = try await urlSession.data(from: url)
                 
                 // UIImage oluştur
                 guard let image = UIImage(data: data) else {

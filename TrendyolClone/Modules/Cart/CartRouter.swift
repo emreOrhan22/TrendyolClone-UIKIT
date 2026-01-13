@@ -11,10 +11,12 @@ class CartRouter: CartRouterProtocol {
     
     weak var viewController: UIViewController?
     
-    static func createModule() -> UIViewController {
+    static func createModule(
+        repository: ProductRepositoryProtocol = ProductRepository()
+    ) -> UIViewController {
         let view = CartViewController()
         let presenter = CartPresenter()
-        let interactor = CartInteractor()
+        let interactor = CartInteractor(productRepository: repository)
         let router = CartRouter()
         
         // Katmanları birbirine "enjekte" ediyoruz (Dependency Injection)
